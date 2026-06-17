@@ -1,0 +1,23 @@
+// Импортируем переменные для использования в стилях
+@import 'src/assets/variables';
+
+.custom-select {
+  width: auto;
+  border: 1px solid $green;
+  border-radius: 6px;
+  background-color: $white;
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-size: 14px;
+  color: $green;
+  padding: 1px;
+
+  select {
+    padding: 5px 15px;
+    border: none;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+}
