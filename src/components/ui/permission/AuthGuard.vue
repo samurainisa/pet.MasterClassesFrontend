@@ -5,7 +5,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useUserStore } from '@/stores/userStore'
+import { useUserStore } from '@/stores/user/userStore'
 
 const props = defineProps<{ roles: string[] }>()
 

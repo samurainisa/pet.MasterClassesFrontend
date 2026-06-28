@@ -1,6 +1,6 @@
 <!-- src/components/map/LayerToggleButton.vue -->
 <script setup lang="ts">
-import { useLayersStore } from '@/stores/layersStore'
+import { useLayersStore } from '@/stores/map/layersStore'
 import L from 'leaflet'
 
 const layers = [

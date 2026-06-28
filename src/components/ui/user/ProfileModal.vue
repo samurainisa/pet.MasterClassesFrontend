@@ -9,34 +9,43 @@
     </div>
     <ul class="profile-modal__list">
       <li><a @click="goToProfile">Профиль</a></li>
-      <li><a href="#">Мои мероприятия</a></li>
-      <AuthGuard :roles="['Organizer', 'Admin']">
-        <li><a href="#">Мои заявки</a></li>
+      <AuthGuard :roles="organizerRoles">
+        <li><a @click="goToOrganizerMasterClasses">Мои мероприятия</a></li>
       </AuthGuard>
-      <li><a href="#">Избранные</a></li>
       <li><a href="#" @click="logout">Выход</a></li>
     </ul>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/userStore'
+import { useUserStore } from '@/stores/user/userStore'
+import { routeNames } from '@/app/router/routes'
 import AuthGuard from '@/components/ui/permission/AuthGuard.vue'
+
+const organizerRoles = ['Organizer', 'Admin']
+
+const emit = defineEmits<{ close: [] }>()
 
 const userStore = useUserStore()
 const user = computed(() => userStore.user)
 const router = useRouter()
 
 const goToProfile = () => {
-  router.push({ name: 'Profile' })
+  emit('close')
+  router.push({ name: routeNames.profile })
+}
+
+const goToOrganizerMasterClasses = () => {
+  emit('close')
+  router.push({ name: routeNames.organizerMasterClasses })
 }
 
 const logout = () => {
+  emit('close')
   userStore.logout()
-  userStore.isAuthenticated = false
-  router.push({ name: 'Home' })
+  router.push({ name: routeNames.home })
 }
 </script>
 

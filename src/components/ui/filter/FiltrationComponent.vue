@@ -49,12 +49,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import { useMasterClassesStore } from '@/stores/masterClasses'
+import { useMasterClassesStore } from '@/stores/master-class/masterClassStore'
 import DatePicker from '@/components/ui/filter/DatePicker.vue'
 import CheckboxList from '@/components/ui/filter/CheckboxList.vue'
-import { fetchCategories, fetchCities } from '@/services/masterClassService'
 import AuthGuard from '@/components/ui/permission/AuthGuard.vue'
-import router from '@/routes'
+import router from '@/app/router'
+import { routeNames } from '@/app/router/routes'
 
 const categoryItems = ref<{ value: number; label: string }[]>([])
 const cityItems = ref<{ value: string; label: string }[]>([])
@@ -66,14 +66,19 @@ const selectedCities = ref<string[]>([])
 const searchQuery = ref<string>('')
 
 const goToAddMasterClass = () => {
-  router.push({ name: 'AddMasterClass' })
+  router.push({ name: routeNames.addMasterClass })
 }
 
 const loadItems = async () => {
   try {
-    const [categories, cities] = await Promise.all([fetchCategories(), fetchCities()])
+    const [categories, cities] = await Promise.all([
+      store.fetchCategories(),
+      store.fetchCities()
+    ])
 
-    categoryItems.value = categories.map((cat: { id: number; name: string }) => ({
+    if (!categories || !cities) return
+
+    categoryItems.value = categories.map((cat) => ({
       value: cat.id,
       label: cat.name
     }))

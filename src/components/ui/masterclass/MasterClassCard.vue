@@ -26,7 +26,7 @@
         >
       </div>
       <h3>
-        <router-link :to="{ name: 'MasterClassDetail', params: { id: masterClass.id } }">
+        <router-link :to="{ name: routeNames.masterClassDetail, params: { id: masterClass.id } }">
           {{ masterClass.title }}
         </router-link>
       </h3>
@@ -60,17 +60,17 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useFavoritesStore } from '@/stores/favoritesStore'
+import { useFavoritesStore } from '@/stores/favorite/favoriteStore'
 import { useToast } from '@/composables/useToast'
 import Cookies from 'js-cookie'
 
-const props = defineProps({
-  masterClass: {
-    type: Object,
-    required: true,
-    default: () => ({})
-  }
-})
+import { routeNames } from '@/app/router/routes'
+import { API_BASE_URL } from '@/shared/config/env'
+import type { MasterClass } from '@/entities/master-class/model/types'
+
+const props = defineProps<{
+  masterClass: MasterClass
+}>()
 const isModalOpen = ref(false)
 const favoritesStore = useFavoritesStore()
 const { showToast } = useToast()
@@ -102,14 +102,12 @@ const isFavorite = computed(() => {
   return favoritesStore.isFavorite(props.masterClass.id)
 })
 
-const BASE_URL = 'http://localhost:8000' // Замените на ваш реальный базовый URL
-
 const fullImageUrl = computed(() => {
   if (!props.masterClass.image_url) {
-    return '/default-image.jpg' // Замените на ваш реальный URL по умолчанию
+    return '/default-image.jpg'
   }
   if (props.masterClass.image_url.startsWith('/')) {
-    return `${BASE_URL}${props.masterClass.image_url}`
+    return `${API_BASE_URL}${props.masterClass.image_url}`
   }
   return props.masterClass.image_url
 })

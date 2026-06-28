@@ -37,8 +37,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useMasterClassesStore } from '@/stores/masterClasses'
-import { useSidebarStore } from '@/stores/sidebarStore'
+import { useMasterClassesStore } from '@/stores/master-class/masterClassStore'
+import { useSidebarStore } from '@/stores/map/sidebarStore'
 import SidebarToggleButton from '@/components/map/SidebarToggleButton.vue'
 
 const masterClassesStore = useMasterClassesStore()

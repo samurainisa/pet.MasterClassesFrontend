@@ -41,8 +41,9 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/userStore'
+import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user/userStore'
+import { routeNames } from '@/app/router/routes'
 import { useToast } from '@/composables/useToast'
 
 interface LoginForm {
@@ -64,6 +65,7 @@ const loginForm = ref<LoginForm>({
 const loginFormRef = ref<HTMLFormElement | null>(null)
 const userStore = useUserStore()
 const router = useRouter()
+const route = useRoute()
 const { showToast } = useToast()
 const loading = ref(false)
 const showPassword = ref(false)
@@ -74,7 +76,12 @@ const handleLogin = async () => {
     await userStore.login(loginForm.value)
     showToast('Успешный вход!', 'success')
     closeModal()
-    await router.push({ name: 'Home' })
+    const redirect = route.query.redirect
+    if (typeof redirect === 'string' && redirect.startsWith('/')) {
+      await router.push(redirect)
+    } else {
+      await router.push({ name: routeNames.home })
+    }
   } catch (error: any) {
     if (error.response) {
       if (error.response.status === 403) {
@@ -99,7 +106,7 @@ const closeModal = () => {
 
 const goToRegister = () => {
   closeModal()
-  router.push({ name: 'Register' })
+  router.push({ name: routeNames.register })
 }
 
 const recoverPassword = () => {

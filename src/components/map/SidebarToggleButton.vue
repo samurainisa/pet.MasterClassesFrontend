@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { useSidebarStore } from '@/stores/sidebarStore'
+import { useSidebarStore } from '@/stores/map/sidebarStore'
 
 const sidebarStore = useSidebarStore()
 const { isOpen, toggle } = sidebarStore
