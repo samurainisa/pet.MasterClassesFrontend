@@ -8,8 +8,11 @@ import L, {
   type GeoJSON,
   type Map
 } from 'leaflet'
+import type { MasterClass } from '@/entities/master-class/model/types'
 import 'leaflet.heat'
 import 'leaflet.markercluster'
+
+import type { GeoJsonObject } from 'geojson'
 
 export const useLayersStore = defineStore('layersStore', () => {
   const activeLayer = ref<number>(0)
@@ -24,22 +27,15 @@ export const useLayersStore = defineStore('layersStore', () => {
     map.value = mapInstance
   }
 
-  function updateMarkers(displayedMasterClasses: any[], myIcon: L.Icon) {
+  function updateMarkers(displayedMasterClasses: MasterClass[], myIcon: L.Icon) {
     if (!map.value) return
 
     markers.value.clearLayers()
 
     displayedMasterClasses.forEach((item, index) => {
-      const { latitude, longitude } = item.coordinates || {}
+      const { latitude, longitude } = item.coordinates
 
-      if (
-        latitude === undefined ||
-        longitude === undefined ||
-        isNaN(latitude) ||
-        isNaN(longitude)
-      ) {
-        return
-      }
+      if (isNaN(latitude) || isNaN(longitude)) return
 
       const marker = L.marker([latitude, longitude] as LatLngExpression, { icon: myIcon })
         .on('mouseover', () => {
@@ -72,12 +68,13 @@ export const useLayersStore = defineStore('layersStore', () => {
         const popup = document.getElementById(`popup-image-${index}`)
         if (popup) {
           popup.addEventListener('mouseover', () => {
-            clearTimeout((marker as any)._closeTimeout)
+            clearTimeout((marker as L.Marker & { _closeTimeout?: ReturnType<typeof setTimeout> })._closeTimeout)
           })
           popup.addEventListener('mouseout', () => {
-            ;(marker as any)._closeTimeout = setTimeout(() => {
-              marker.closePopup()
-            }, 300)
+            ;(marker as L.Marker & { _closeTimeout?: ReturnType<typeof setTimeout> })._closeTimeout =
+              setTimeout(() => {
+                marker.closePopup()
+              }, 300)
           })
         }
       })
@@ -85,12 +82,12 @@ export const useLayersStore = defineStore('layersStore', () => {
       markers.value.addLayer(marker)
     })
 
-    if (map.value && markers.value) {
+    if (map.value) {
       map.value.addLayer(markers.value as unknown as Layer)
     }
   }
 
-  function updateHeatmap(displayedMasterClasses: any[]) {
+  function updateHeatmap(displayedMasterClasses: MasterClass[]) {
     if (!map.value) return
 
     if (heatmapLayer.value) {
@@ -99,48 +96,35 @@ export const useLayersStore = defineStore('layersStore', () => {
 
     const heatData = displayedMasterClasses
       .map((item) => {
-        const { latitude, longitude } = item.coordinates || {}
-
-        if (
-          latitude === undefined ||
-          longitude === undefined ||
-          isNaN(latitude) ||
-          isNaN(longitude)
-        ) {
-          return null
-        }
+        const { latitude, longitude } = item.coordinates
+        if (isNaN(latitude) || isNaN(longitude)) return null
         return [latitude, longitude, 300] as [number, number, number]
       })
-      .filter((item) => item !== null) as [number, number, number][]
+      .filter((item): item is [number, number, number] => item !== null)
 
-    heatmapLayer.value = (L as any).heatLayer(heatData, { radius: 25 }) as Layer
+    heatmapLayer.value = (L as typeof L & { heatLayer: (...args: unknown[]) => Layer }).heatLayer(
+      heatData,
+      { radius: 25 }
+    ) as Layer
 
     if (map.value && heatmapLayer.value) {
       heatmapLayer.value.addTo(map.value as L.Map)
     }
   }
 
-  function aggregateEventCounts(displayedMasterClasses: any[]) {
+  function aggregateEventCounts(displayedMasterClasses: MasterClass[]) {
     const counts: Record<string, number> = {}
 
     displayedMasterClasses.forEach((item) => {
-      const { latitude, longitude } = item.coordinates || {}
+      const { latitude, longitude } = item.coordinates
+      if (isNaN(latitude) || isNaN(longitude)) return
 
-      if (
-        latitude === undefined ||
-        longitude === undefined ||
-        isNaN(latitude) ||
-        isNaN(longitude)
-      ) {
-        return
-      }
       const point = L.latLng(latitude, longitude)
-      SubData.features.forEach((feature: any) => {
-        const polygon = L.geoJSON(feature).getLayers()[0] as L.Polygon
+      SubData.features.forEach((feature: GeoJsonObject) => {
+        const polygon = L.geoJSON(feature as GeoJSON.GeoJsonObject).getLayers()[0] as L.Polygon
         if (polygon.getBounds().contains(point)) {
-          const region = feature.properties.name
-          if (!counts[region]) counts[region] = 0
-          counts[region]++
+          const region = (feature as GeoJsonObject & { properties: { name: string } }).properties.name
+          counts[region] = (counts[region] ?? 0) + 1
         }
       })
     })
@@ -156,25 +140,19 @@ export const useLayersStore = defineStore('layersStore', () => {
     }
 
     function getColor(eventCount: number) {
-      return eventCount > 100
-        ? '#800026'
-        : eventCount > 50
-          ? '#BD0026'
-          : eventCount > 20
-            ? '#E31A1C'
-            : eventCount > 10
-              ? '#FC4E2A'
-              : eventCount > 5
-                ? '#FD8D3C'
-                : eventCount > 2
-                  ? '#FEB24C'
-                  : eventCount > 1
-                    ? '#FED976'
-                    : '#81817f'
+      if (eventCount > 100) return '#800026'
+      if (eventCount > 50) return '#BD0026'
+      if (eventCount > 20) return '#E31A1C'
+      if (eventCount > 10) return '#FC4E2A'
+      if (eventCount > 5) return '#FD8D3C'
+      if (eventCount > 2) return '#FEB24C'
+      if (eventCount > 1) return '#FED976'
+      return '#81817f'
     }
 
-    function style(feature: any) {
-      const eventCount = eventCountByRegion.value[feature.properties.name] || 0
+    function style(feature: GeoJsonObject) {
+      const name = (feature as GeoJsonObject & { properties: { name: string } }).properties.name
+      const eventCount = eventCountByRegion.value[name] ?? 0
       return {
         fillColor: getColor(eventCount),
         weight: 2,
@@ -185,12 +163,13 @@ export const useLayersStore = defineStore('layersStore', () => {
       }
     }
 
-    function onEachFeature(feature: any, layer: L.Layer) {
-      const eventCount = eventCountByRegion.value[feature.properties.name] || 0
+    function onEachFeature(feature: GeoJsonObject, layer: L.Layer) {
+      const name = (feature as GeoJsonObject & { properties: { name: string } }).properties.name
+      const eventCount = eventCountByRegion.value[name] ?? 0
       layer.on({
-        mouseover: (e: any) => {
-          const layer = e.target
-          layer.setStyle({
+        mouseover: (e: L.LeafletMouseEvent) => {
+          const target = e.target as L.Path
+          target.setStyle({
             weight: 5,
             color: '#666',
             dashArray: '',
@@ -198,11 +177,9 @@ export const useLayersStore = defineStore('layersStore', () => {
           })
           layer.bindPopup(`Количество мероприятий: ${eventCount}`).openPopup()
         },
-        mouseout: (e: any) => {
-          if (geoJsonLayer.value) {
-            geoJsonLayer.value.resetStyle(e.target)
-            layer.closePopup()
-          }
+        mouseout: (e: L.LeafletMouseEvent) => {
+          geoJsonLayer.value?.resetStyle(e.target)
+          layer.closePopup()
         }
       })
     }
@@ -212,21 +189,19 @@ export const useLayersStore = defineStore('layersStore', () => {
       onEachFeature
     } as GeoJSONOptions)
 
-    if (map.value && geoJsonLayer.value) {
-      geoJsonLayer.value.addTo(map.value as Map)
-    }
+    geoJsonLayer.value.addTo(map.value as Map)
   }
 
-  function toggleLayer(index: number, displayedMasterClasses: any[], myIcon: L.Icon) {
+  function toggleLayer(index: number, displayedMasterClasses: MasterClass[], myIcon: L.Icon) {
     activeLayerIndex.value = index
 
-    if (heatmapLayer.value) {
-      if (map.value) map.value.removeLayer(heatmapLayer.value as Layer)
+    if (heatmapLayer.value && map.value) {
+      map.value.removeLayer(heatmapLayer.value as Layer)
     }
-    if (geoJsonLayer.value) {
-      if (map.value) map.value.removeLayer(geoJsonLayer.value as GeoJSON)
+    if (geoJsonLayer.value && map.value) {
+      map.value.removeLayer(geoJsonLayer.value as GeoJSON)
     }
-    if (map.value && markers.value) {
+    if (map.value) {
       map.value.removeLayer(markers.value as unknown as Layer)
     }
 
