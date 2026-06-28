@@ -1,4 +1,3 @@
-// src/utils/formatDate.ts
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
