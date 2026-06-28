@@ -3,7 +3,7 @@
     <div class="navbar__container">
       <div class="navbar__logo" @click="goToHome">Главная</div>
       <div class="navbar__actions">
-        <AuthGuard :roles="['Organizer', 'Admin']">
+        <AuthGuard :roles="organizerRoles">
           <img
             class="navbar__map-icon"
             src="@/assets/imgs/map.svg"
@@ -41,19 +41,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/userStore'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user/userStore'
+import { routeNames } from '@/app/router/routes'
 import LoginModal from '@/components/ui/auth/LoginModal.vue'
 import AuthGuard from '@/components/ui/permission/AuthGuard.vue'
 import ProfileModal from '@/components/ui/user/ProfileModal.vue'
 
+const organizerRoles = ['Organizer', 'Admin']
+
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 const isLoginModalVisible = ref(false)
 const isProfileModalVisible = ref(false)
 
-const user = computed(() => userStore.user)
 const isAuthenticated = computed(() => userStore.isAuthenticated)
 
 const openAuthModal = () => {
@@ -74,27 +77,23 @@ watch(isAuthenticated, (newVal) => {
   }
 })
 
+onMounted(() => {
+  if (route.query.redirect && !isAuthenticated.value) {
+    isLoginModalVisible.value = true
+  }
+})
+
 const goToHome = () => {
-  router.push({ name: 'Home' })
+  router.push({ name: routeNames.home })
 }
 
 const goToMap = () => {
-  router.push({ name: 'Map' })
+  router.push({ name: routeNames.map })
 }
 </script>
 
 <style scoped lang="scss">
 @import '@/assets/variables';
-
-.navbar__link {
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
 
 .navbar {
   width: 100%;
@@ -146,21 +145,6 @@ const goToMap = () => {
 
       &:hover {
         transform: scale(1.1);
-      }
-    }
-
-    .navbar__button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      background-color: $green;
-      color: $white;
-      cursor: pointer;
-      font-size: 14px;
-      margin-left: 10px;
-
-      &:hover {
-        background-color: darken($green, 10%);
       }
     }
 

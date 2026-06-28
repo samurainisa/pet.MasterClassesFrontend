@@ -142,28 +142,20 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick, computed } from 'vue'
-import { useMasterClassesStore } from '@/stores/masterClasses'
+import { useMasterClassesStore } from '@/stores/master-class/masterClassStore'
 import CheckboxList from '@/components/ui/filter/CheckboxList.vue'
 import L from 'leaflet'
+
+import type { UserBrief } from '@/entities/user/model/types'
+import type { CreateMasterClassPayload } from '@/entities/master-class/model/types'
 
 interface Category {
   value: number
   label: string
 }
 
-interface Organizer {
-  id: number
-  first_name: string
-  last_name: string
-}
-
-interface Speaker {
-  id: number
-  first_name: string
-  last_name: string
-}
-
-const masterClassesStore = useMasterClassesStore()
+const organizers = ref<UserBrief[]>([])
+const speakers = ref<UserBrief[]>([])
 const form = ref({
   title: '',
   categories: [] as number[],
@@ -189,9 +181,8 @@ const form = ref({
   requires_approval: false
 })
 
+const masterClassesStore = useMasterClassesStore()
 const categories = ref<Category[]>([])
-const organizers = ref<Organizer[]>([])
-const speakers = ref<Speaker[]>([])
 
 const fetchCategories = async () => {
   try {
@@ -313,8 +304,19 @@ const checkAddress = async () => {
 }
 
 const submitForm = async () => {
+  if (!form.value.organizer || !form.value.speaker) {
+    alert('Выберите организатора и спикера')
+    return
+  }
+
+  const payload: CreateMasterClassPayload = {
+    ...form.value,
+    organizer: form.value.organizer,
+    speaker: form.value.speaker
+  }
+
   try {
-    await masterClassesStore.createMasterClass(form.value)
+    await masterClassesStore.createMasterClass(payload)
     alert('Мероприятие успешно создано')
   } catch (error) {
     console.error('Error creating master class:', error)

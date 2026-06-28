@@ -1,8 +1,8 @@
 <template>
-  <div id="app" :class="{ 'has-map': isMapPage }">
+  <div id="app" :class="{ 'has-map': isMapLayout }">
     <div class="wrapper">
       <main class="main-content">
-        <Nav />
+        <AppNav />
         <router-view />
       </main>
     </div>
@@ -10,26 +10,13 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import Nav from '@/components/ui/navigation/Nav.vue'
-
-const isMapPage = ref(false)
+import AppNav from '@/widgets/layout/ui/AppNav.vue'
 
 const route = useRoute()
 
-const checkIfMapPage = () => {
-  isMapPage.value =
-    (typeof route.name === 'string' && route.name.includes('map')) || route.path.includes('map')
-}
-
-onMounted(() => {
-  checkIfMapPage()
-})
-
-watch(route, () => {
-  checkIfMapPage()
-})
+const isMapLayout = computed(() => route.meta.layout === 'map')
 </script>
 
 <style>

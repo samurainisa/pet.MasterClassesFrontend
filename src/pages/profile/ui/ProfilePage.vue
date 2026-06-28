@@ -68,26 +68,15 @@
 
 <script lang="ts" setup>
 import { ref, computed } from 'vue'
-import { useUserStore } from '@/stores/userStore'
-import { formatDate } from '@/utils/formatDate'
-import { rolesDictionary } from '@/utils/rolesDictionary'
-import { useToast } from '@/composables/useToast'
 import { useRouter } from 'vue-router'
-import { userService } from '@/services/usersService'
-
-interface User {
-  id: number
-  username: string
-  role: string
-  first_name?: string
-  last_name?: string
-  email?: string
-  date_joined?: string
-  bio?: string
-  age?: number
-  gender?: string
-  image?: string
-}
+import { useUserStore } from '@/stores/user/userStore'
+import { formatDate } from '@/shared/lib/formatDate'
+import { rolesDictionary } from '@/shared/lib/rolesDictionary'
+import { useToast } from '@/composables/useToast'
+import { routeNames } from '@/app/router/routes'
+import { userApi } from '@/entities/user/api/userApi'
+import { API_BASE_URL } from '@/shared/config/env'
+import type { User } from '@/entities/user/model/types'
 
 const userStore = useUserStore()
 const user = computed<User | null>(() => userStore.user)
@@ -105,7 +94,7 @@ const fullImageUrl = computed(() => {
   if (user.value?.image) {
     return user.value.image.startsWith('http')
       ? user.value.image
-      : `http://localhost:8000${user.value.image}`
+      : `${API_BASE_URL}${user.value.image}`
   }
   return ''
 })
@@ -133,11 +122,12 @@ const saveChanges = async () => {
       formData.append('image', newAvatar.value)
     }
 
-    const response = await userService.updateUser(user.value!.id, formData)
+    const response = await userApi.updateUser(user.value!.id, formData)
     console.log(JSON.stringify(response.data, null, 2))
     if (response.status === 200) {
       await userStore.fetchUser(user.value!.id)
-      showToast(response.data.message, 'success')
+      const message = (response.data as User & { message?: string }).message
+      showToast(message ?? 'Профиль обновлён', 'success')
       editMode.value = false
       router.go(0)
     }
@@ -164,7 +154,7 @@ const confirmLogout = () => {
 const logout = () => {
   userStore.logout()
   showToast('Вы успешно вышли из системы', 'success')
-  router.push({ name: 'Home' })
+  router.push({ name: routeNames.home })
 }
 </script>
 

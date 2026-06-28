@@ -1,45 +1,37 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import axios from 'axios'
+import { registrationApi } from '@/entities/registration/api/registrationApi'
 import { useToast } from '@/composables/useToast'
+import type { AxiosError } from 'axios'
+import type { ApiErrorResponse } from '@/shared/api/types'
 
-interface User {
-  id: number
-  username: string
-  first_name: string
-  last_name: string
-  email: string
-}
-
-interface Registration {
-  user: User
+interface RegistrationView {
+  user: {
+    id: number
+    username: string
+    first_name: string
+    last_name: string
+    email: string
+  }
   register_state: string
   date_register: string
 }
 
-interface ErrorResponse {
-  response?: {
-    data?: {
-      detail?: string
-    }
-  }
-}
-
 const route = useRoute()
-const masterClassId = ref<string | string[]>(route.params.id)
-const registrations = ref<Registration[]>([])
+const masterClassId = ref(route.params.id)
+const registrations = ref<RegistrationView[]>([])
 const { showToast } = useToast()
 
 const fetchRegistrations = async () => {
   try {
-    const response = await axios.get(`/api/masterclasses/${masterClassId.value}/registrations/`)
-    registrations.value = response.data
+    const data = await registrationApi.fetchRegistrations(Number(masterClassId.value))
+    registrations.value = data as unknown as RegistrationView[]
   } catch (err) {
-    const error = err as ErrorResponse
-    const errorMessage = error.response?.data?.detail || 'Ошибка загрузки заявок'
+    const error = err as AxiosError<ApiErrorResponse>
+    const errorMessage = error.response?.data?.detail ?? 'Ошибка загрузки заявок'
     showToast(errorMessage, 'error')
-    console.error('Ошибка загрузки заявок:', error.response?.data || error)
+    console.error('Ошибка загрузки заявок:', error.response?.data ?? error)
   }
 }
 

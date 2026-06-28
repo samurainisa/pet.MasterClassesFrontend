@@ -87,36 +87,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useMasterClassesStore } from '@/stores/masterClasses'
-import { useRegistrationStore } from '@/stores/registrationStore'
+import { useMasterClassesStore } from '@/stores/master-class/masterClassStore'
+import { useRegistrationStore } from '@/stores/registration/registrationStore'
 import MasterClassCard from '@/components/ui/masterclass/MasterClassCard.vue'
-import { fetchMasterClassesByCity } from '@/services/masterClassService'
+import { masterClassApi } from '@/entities/master-class/api/masterClassApi'
+import type { MasterClass } from '@/entities/master-class/model/types'
 import { useToast } from '@/composables/useToast'
 import L from 'leaflet'
-
-interface Coordinates {
-  latitude: number
-  longitude: number
-}
-
-interface MasterClass {
-  id: number
-  title: string
-  categories: Array<{ id: number; name: string }>
-  start_date: string
-  end_date: string
-  locality: string
-  image_url: string | null
-  description: string
-  organizer: { first_name: string; last_name: string }
-  speakers: Array<{ id: number; first_name: string; last_name: string }>
-  street?: string
-  house?: string
-  province?: string
-  country?: string
-  postal_code?: string
-  coordinates?: Coordinates
-}
 
 const route = useRoute()
 const masterClassId = ref<string | string[]>(route.params.id)
@@ -143,7 +120,7 @@ const fetchMasterClass = async (id: string | string[]) => {
   }
 }
 
-const initializeMap = (coordinates: Coordinates) => {
+const initializeMap = (coordinates: MasterClass['coordinates']) => {
   if (!coordinates) return
   if (map) {
     map.remove()
@@ -170,7 +147,7 @@ const initializeMap = (coordinates: Coordinates) => {
 const loadRelatedEvents = async (locality: string) => {
   if (!locality) return
   try {
-    relatedEvents.value = await fetchMasterClassesByCity(locality)
+    relatedEvents.value = await masterClassApi.fetchByCity(locality)
   } catch (error) {
     console.error('Ошибка загрузки связанных мероприятий:', error)
   }

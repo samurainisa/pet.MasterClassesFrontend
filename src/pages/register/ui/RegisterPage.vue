@@ -65,8 +65,10 @@
 <script lang="ts" setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/userStore'
+import { useUserStore } from '@/stores/user/userStore'
+import { routeNames } from '@/app/router/routes'
 import { useToast } from '@/composables/useToast'
+import type { RegisterPayload } from '@/entities/user/model/types'
 
 interface RegisterForm {
   username: string
@@ -95,11 +97,11 @@ const loading = ref(false)
 const handleRegister = async () => {
   loading.value = true
   try {
-    await userStore.register(registerForm)
+    await userStore.register(registerForm as RegisterPayload)
     showToast('Успешная регистрация! Пожалуйста, подтвердите свой аккаунт на почте.', 'success')
     resetForm()
     setTimeout(() => {
-      router.push('/home')
+      router.push({ name: routeNames.home })
     }, 1000)
   } catch (error: any) {
     if (error.response) {
@@ -115,7 +117,7 @@ const handleRegister = async () => {
 }
 
 const goToLogin = () => {
-  router.push('/login')
+  router.push({ name: routeNames.home })
 }
 
 const resetForm = () => {

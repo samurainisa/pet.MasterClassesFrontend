@@ -1,6 +1,5 @@
 <template>
   <div class="main-container">
-    <Nav @openAuthModal="toggleModal" />
     <div id="map" class="maps-container"></div>
     <LayerToggleButton :displayedMasterClasses="displayedMasterClasses" :myIcon="myIcon" />
     <div class="controls-container">
@@ -23,28 +22,23 @@
         <img src="/src/assets/imgs/map-controls/to_home.svg" alt="" />
       </button>
     </div>
-    <AuthModal :visible="isModalOpen" @close="toggleModal" />
   </div>
 </template>
 
 <script setup lang="ts">
 import icon from '@/assets/imgs/map-marker-svgrepo-com.svg'
-import { useMasterClassesStore } from '@/stores/masterClasses'
-import { computed, onMounted, ref, watch } from 'vue'
-import { toRaw } from 'vue'
-import { useLayersStore } from '@/stores/layersStore'
-import ListViewMasterClasses from '@/components/map/ListViewMasterClasses.vue'
+import { useMasterClassesStore } from '@/stores/master-class/masterClassStore'
+import { computed, onMounted, ref, watch, toRaw } from 'vue'
+import { useLayersStore } from '@/stores/map/layersStore'
 import Timeline from '@/components/map/Timeline.vue'
-import Nav from '@/components/ui/navigation/Nav.vue'
-import AuthModal from '@/components/ui/auth/LoginModal.vue'
 import LayerToggleButton from '@/components/map/LayerToggleButton.vue'
+import type { MasterClass } from '@/entities/master-class/model/types'
 import L from 'leaflet'
 
 const store = useMasterClassesStore()
 const layersStore = useLayersStore()
-const displayedMasterClasses = ref<any[]>([])
-const isModalOpen = ref(false)
-let userMarker: any = null
+const displayedMasterClasses = ref<MasterClass[]>([])
+let userMarker: L.Marker | null = null
 
 const myIcon = L.icon({
   iconUrl: icon,
@@ -69,9 +63,9 @@ const latestDate = computed(() => {
   )
 })
 
-let mapInstance: any
+let mapInstance: L.Map | undefined
 let lastZoomTime = 0
-const zoomCooldown = 500 // ms
+const zoomCooldown = 500
 
 function handleDataChange({
   startDate,
@@ -115,7 +109,7 @@ function initializeMap(center: [number, number]) {
 }
 
 onMounted(async () => {
-  await store.fetchAllMasterClasses(true)
+  await store.fetchAllMasterClasses()
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -182,20 +176,12 @@ function zoomToHome() {
     alert('Ваш браузер не поддерживает геолокацию.')
   }
 }
-
-const toggleModal = () => {
-  isModalOpen.value = !isModalOpen.value
-}
 </script>
 
 <style lang="scss" scoped>
 @import '@/assets/variables';
 @import '@/assets/button-styles';
 @import '@/assets/map-styles';
-
-.main-content {
-  margin-top: 0;
-}
 
 .show-all-btn {
   background-color: $green;

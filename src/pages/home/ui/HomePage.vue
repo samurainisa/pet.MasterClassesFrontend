@@ -1,6 +1,5 @@
 <template>
   <div class="main-container">
-    <Nav />
     <FiltrationComponent />
     <div class="content">
       <div class="cards-container">
@@ -28,9 +27,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useMasterClassesStore } from '@/stores/masterClasses'
+import { useMasterClassesStore } from '@/stores/master-class/masterClassStore'
 import MasterClassCard from '@/components/ui/masterclass/MasterClassCard.vue'
-import Nav from '@/components/ui/navigation/Nav.vue'
 import FiltrationComponent from '@/components/ui/filter/FiltrationComponent.vue'
 
 const masterClassesStore = useMasterClassesStore()
@@ -100,7 +98,6 @@ watch(
   gap: 32px 24px;
   width: 100%;
   justify-content: center;
-
   grid-template-columns: repeat(auto-fit, minmax(300px, 0fr));
 
   @media (max-width: 767px) {
